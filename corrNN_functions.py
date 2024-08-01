@@ -36,8 +36,7 @@ def add_noise(dataset, percentage_max, random_noise, mu=0, sigma=1):
         percentage = np.ones(dataset['input'].shape[0], dataset['input'].shape[1]) * percentage_max
 
     # define noise character
-    dataset['input_noisy'] = dataset['input'].copy() + percentage / 100. * np.random.normal(mu, sigma, dataset[
-        'input'].shape)
+    dataset['input_noisy'] = dataset['input'].copy() + percentage / 100. * np.random.normal(mu, sigma, dataset['input'].shape)
 
     return dataset
 
@@ -71,9 +70,9 @@ def fc_layer(x, mode, d, n_units, keep, act_fun):
 
     # Activation function
     if act_fun == 'softmax':
-        x_relu = tf.nn.softmax(x_hidden)
+        x_act = tf.nn.softmax(x_hidden)
     else:
-        x_relu = tf.nn.relu(x_hidden)
+        x_act = tf.nn.relu(x_hidden)
 
     # Apply dropout
     def f1(): return keep
@@ -83,7 +82,7 @@ def fc_layer(x, mode, d, n_units, keep, act_fun):
     thresh = tf.Variable(2.0, dtype=tf.float32)
     keep_prob = tf.case([(tf.less(mode, thresh), f1)], default=f2)
 
-    x_hidden = tf.nn.dropout(x_relu, keep_prob)
+    x_hidden = tf.nn.dropout(x_act, keep_prob)
 
     return x_hidden
 
