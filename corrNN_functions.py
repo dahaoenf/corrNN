@@ -11,12 +11,9 @@ def load_split_dataset(input_file):
     # for XX being train,val,test, respectively
     data_struct = scipy.io.loadmat(input_file)
 
-    dataset_train = {'input': data_struct['dataset_train_input'], 'ref': data_struct['dataset_train_ref'],
-                     'indices': data_struct['dataset_train_indices'], 'no_comp': data_struct['dataset_train_no_comp']}
-    dataset_val = {'input': data_struct['dataset_val_input'], 'ref': data_struct['dataset_val_ref'],
-                   'indices': data_struct['dataset_val_indices'], 'no_comp': data_struct['dataset_val_no_comp']}
-    dataset_test = {'input': data_struct['dataset_test_input'], 'ref': data_struct['dataset_test_ref'],
-                    'indices': data_struct['dataset_test_indices'], 'no_comp': data_struct['dataset_test_no_comp']}
+    dataset_train = {'input': data_struct['dataset_train_input'], 'ref': data_struct['dataset_train_ref']}
+    dataset_val = {'input': data_struct['dataset_val_input'], 'ref': data_struct['dataset_val_ref']}
+    dataset_test = {'input': data_struct['dataset_test_input'], 'ref': data_struct['dataset_test_ref']}
 
     return dataset_train, dataset_val, dataset_test, data_struct['t1_t2_combinations'], data_struct['ti_te_combinations']
 
