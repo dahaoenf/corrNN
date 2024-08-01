@@ -11,9 +11,12 @@ def load_split_dataset(input_file):
     # for XX being train,val,test, respectively
     data_struct = scipy.io.loadmat(input_file)
 
-    dataset_train = {'input': data_struct['dataset_train_input'], 'ref': data_struct['dataset_train_ref']}
-    dataset_val = {'input': data_struct['dataset_val_input'], 'ref': data_struct['dataset_val_ref']}
-    dataset_test = {'input': data_struct['dataset_test_input'], 'ref': data_struct['dataset_test_ref']}
+    dataset_train = {'input': data_struct['dataset_train_input'], 'ref': data_struct['dataset_train_ref'],
+                     'indices': data_struct['dataset_train_indices'], 'no_comp': data_struct['dataset_train_no_comp']}
+    dataset_val = {'input': data_struct['dataset_val_input'], 'ref': data_struct['dataset_val_ref'],
+                   'indices': data_struct['dataset_val_indices'], 'no_comp': data_struct['dataset_val_no_comp']}
+    dataset_test = {'input': data_struct['dataset_test_input'], 'ref': data_struct['dataset_test_ref'],
+                    'indices': data_struct['dataset_test_indices'], 'no_comp': data_struct['dataset_test_no_comp']}
 
     return dataset_train, dataset_val, dataset_test, data_struct['t1_t2_combinations'], data_struct['ti_te_combinations']
 
@@ -29,8 +32,8 @@ def add_noise(dataset, percentage_max, random_noise, mu=0, sigma=1):
     if random_noise:
         percentage = np.random.rand(dataset['input'].shape[0], dataset['input'].shape[1]) * percentage_max
     else:
-        print('fix noise level')
-        percentage = np.ones(dataset['input'].shape[0], dataset['input'].shape[1]) * percentage_max
+        print('fixed noise level')
+        percentage = np.ones((dataset['input'].shape[0], dataset['input'].shape[1])) * percentage_max
 
     # define noise character
     dataset['input_noisy'] = dataset['input'].copy() + percentage / 100. * np.random.normal(mu, sigma, dataset['input'].shape)

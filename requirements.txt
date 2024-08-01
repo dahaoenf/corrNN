@@ -7,3 +7,7 @@ time
 random
 shutil
 datetime
+pandas
+sklearn
+seaborn==0.10.1
+statsmodels

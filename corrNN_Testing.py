@@ -22,8 +22,7 @@ def main(par, ckpt_dir, test_file):
         keep_pl = tf.placeholder(tf.float32)
 
         # Operations
-        pred_op = TrainFuncs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'],
-                                            par['NL1'], par['NL2'])
+        pred_op = TrainFuncs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['NL1'], par['NL2'])
 
         # Create saver for saving variables
         saver = tf.train.Saver()
@@ -61,12 +60,13 @@ if __name__ == "__main__":
                    'NT1': 60,
                    'NT2': 60,
                    'N': '',
-                   'NL1': 1500,
-                   'NL2': 1800
+                   'NL1': 1024,
+                   'NL2': 2048
                    }
     default_par['Q'] = default_par['NT1']*default_par['NT2']
     default_ckpt_dir = 'checkpoints/timestamp_corrNN_P=' + str(default_par['P']) + '_Q=' + str(default_par['Q']) + \
                        '_mae_ep20000_LR0.001_KR1.0_nl' + str(default_par['NL1']) + ',' + str(default_par['NL2']) + '_Noise5/'
+    default_ckpt_dir = 'checkpoints/202408011707_corrNN_P=238_Q=3600_mae_ep1_LR0.001_KR1.0_nl1024,2048_Noise5/'
     default_test_file = 'test_data_P' + str(default_par['P']) + '.mat'  # change to use in vivo data
     main(default_par, default_ckpt_dir, default_test_file)
 

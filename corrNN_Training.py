@@ -30,11 +30,6 @@ def main(par, input_file):
     dataset_val = Funcs.add_noise(dataset_val, par['noise'], par['random_noise'])
     dataset_test = Funcs.add_noise(dataset_test, par['noise'], par['random_noise'])
 
-    # take absolute value
-    dataset_train['input_noisy'] = np.abs(dataset_train['input_noisy'])
-    dataset_val['input_noisy'] = np.abs(dataset_val['input_noisy'])
-    dataset_test['input_noisy'] = np.abs(dataset_test['input_noisy'])
-
     # normalize
     dataset_train = Funcs.normalize_data(dataset_train)
     dataset_val = Funcs.normalize_data(dataset_val)
@@ -157,8 +152,7 @@ def main(par, input_file):
                 signal_noisy_val, signal_clean_val, ref_val = Funcs.get_batch(dataset_val, val_batch_ind, val_random_idxs)
 
                 # Create input dictionary to feed network
-                val_input_dict = {pl_sig_noisy: signal_noisy_val, pl_ref: ref_val,
-                                  mode_pl: 2.0, keep_pl: par['keep_rate']}
+                val_input_dict = {pl_sig_noisy: signal_noisy_val, pl_ref: ref_val, mode_pl: 2.0, keep_pl: par['keep_rate']}
 
                 # Run operations
                 activations, pred_val, val_loss, val_loss_sum = sess.run([train_op, pred_op, loss_op, loss_sum_op], feed_dict=val_input_dict)
@@ -268,12 +262,12 @@ if __name__ == "__main__":
                    'noise': 5,
                    'random_noise': True,
                    'epochs': 20000,
-                   'batch_size': 500,
+                   'batch_size': 4096,
                    'learning_rate': 1e-3,
                    'keep_rate': 1.,
                    'loss': 'mae',
-                   'NL1': 1500,
-                   'NL2': 1800,
+                   'NL1': 1024,
+                   'NL2': 2048,
                    'P': 238,
                    'Q': '', 'nT1': '', 'nT2': '', 'nTI': '', 'nTE': '',
                    }
