@@ -68,9 +68,15 @@ def fc_layer(x, mode, d, n_units, keep, act_fun):
     x_hidden = tf.matmul(x, w)
     x_hidden = tf.add(x_hidden, b)
 
-    # Activation function
+    # Activation function, default is ReLU
     if act_fun == 'softmax':
         x_act = tf.nn.softmax(x_hidden)
+    elif act_fun == 'leaky_relu' or act_fun == 'leaky':
+        x_act = tf.nn.leaky_relu(x_hidden)
+    elif act_fun == 'elu':
+        x_act = tf.nn.elu(x_hidden)
+    elif act_fun == 'none' or act_fun == '':
+        x_act = x_hidden
     else:
         x_act = tf.nn.relu(x_hidden)
 
@@ -87,10 +93,10 @@ def fc_layer(x, mode, d, n_units, keep, act_fun):
     return x_hidden
 
 
-def correlation_nn(x_in, mode, keep, n_in, n_out, n1, n2):
+def correlation_nn(x_in, mode, keep, n_in, n_out, n1, n2, hidden_act_fun):
     # Parameter decoding
-    fc_1 = fc_layer(x_in, mode, n_in, n1, 1.0, 'relu')
-    fc_2 = fc_layer(fc_1, mode, n1, n2, keep, 'relu')
+    fc_1 = fc_layer(x_in, mode, n_in, n1, 1.0, hidden_act_fun)
+    fc_2 = fc_layer(fc_1, mode, n1, n2, keep, hidden_act_fun)
     fc_3 = fc_layer(fc_2, mode, n2, n_out, keep, 'softmax')
     return fc_3
 

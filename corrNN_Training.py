@@ -58,7 +58,7 @@ def main(par, input_file):
 
     label = timestamp + '_corrNN_P=' + str(par['P']) + '_Q=' + str(par['Q']) + '_' + par['loss'] + '_ep' + str(par['epochs_max']) + \
             '_LR' + str(par['learning_rate']) + '_KR' + str(par['keep_rate']) + '_nl' + str(par['NL1']) + ',' + str(par['NL2']) + \
-            '_Noise' + str(par['noise']) + '_seed' + str(par['seed'])
+            '_' + par['hidden_act_fun'] + '_Noise' + str(par['noise']) + '_seed' + str(par['seed'])
 
     ckpt_dir = 'checkpoints/' + label + '/'
     if not os.path.exists(ckpt_dir):
@@ -89,7 +89,7 @@ def main(par, input_file):
         keep_pl = tf.placeholder(tf.float32)
 
         # Operations
-        pred_op = Funcs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['NL1'], par['NL2'])
+        pred_op = Funcs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['NL1'], par['NL2'], par['hidden_act_fun'])
 
         if par['loss'] == 'mse':
             loss_op = Funcs.mse_loss(pl_ref, pred_op)
@@ -275,9 +275,10 @@ if __name__ == "__main__":
                    'loss': 'mae',
                    'NL1': 1024,
                    'NL2': 2048,
+                   'hidden_act_fun': 'relu',
                    'seed': 0,
                    'P': 238,
-                   'Q': '', 'nT1': '', 'nT2': '', 'nTI': '', 'nTE': '',
+                   'Q': '', 'nT1': '', 'nT2': '', 'nTI': '', 'nTE': ''
                    }
     default_input_file = 'training_data_P' + str(default_par['P'])
     main(default_par, default_input_file)
