@@ -26,6 +26,8 @@ def main(par, input_file):
     par['nTE'] = len(np.unique(ti_te_combs[:, 1]))
 
     # add noise
+    random.seed(par['seed'])
+    np.random.seed(par['seed'])
     dataset_train = Funcs.add_noise(dataset_train, par['noise'], par['random_noise'])
     dataset_val = Funcs.add_noise(dataset_val, par['noise'], par['random_noise'])
     dataset_test = Funcs.add_noise(dataset_test, par['noise'], par['random_noise'])
@@ -43,9 +45,9 @@ def main(par, input_file):
     steps_per_epoch_test = dataset_test['input'].shape[0] // par['batch_size']
 
     print('steps per epoch and val', steps_per_epoch_train, steps_per_epoch_val)
-    train_losses = np.zeros(par['epochs'])
-    val_losses = np.zeros(par['epochs'])
-    test_losses = np.zeros(par['epochs'])
+    train_losses = np.zeros(par['epochs_max'])
+    val_losses = np.zeros(par['epochs_max'])
+    test_losses = np.zeros(par['epochs_max'])
 
     train_random_idxs = list(range(dataset_train['input'].shape[0]))
     train_random_idxs = np.random.permutation(train_random_idxs)
@@ -54,9 +56,9 @@ def main(par, input_file):
     test_random_idxs = list(range(dataset_test['input'].shape[0]))
     test_random_idxs = np.random.permutation(test_random_idxs)
 
-    label = timestamp + '_corrNN_P=' + str(par['P']) + '_Q=' + str(par['Q']) + '_' + par['loss'] + '_ep' + str(par['epochs']) + \
+    label = timestamp + '_corrNN_P=' + str(par['P']) + '_Q=' + str(par['Q']) + '_' + par['loss'] + '_ep' + str(par['epochs_max']) + \
             '_LR' + str(par['learning_rate']) + '_KR' + str(par['keep_rate']) + '_nl' + str(par['NL1']) + ',' + str(par['NL2']) + \
-            '_Noise' + str(par['noise'])
+            '_Noise' + str(par['noise']) + '_seed' + str(par['seed'])
 
     ckpt_dir = 'checkpoints/' + label + '/'
     if not os.path.exists(ckpt_dir):
@@ -74,9 +76,10 @@ def main(par, input_file):
 
     # to monitor loss decrease
     ep_since_last_val_improv = 0
-
     start_time = time.time()
     with tf.Graph().as_default():
+        tf.random.set_random_seed(par['seed'])
+
         # Placeholders for input data
         pl_sig_noisy = tf.placeholder(tf.float32, shape=(None, par['P']))
         pl_ref = tf.placeholder(tf.float32, shape=(None, par['Q']))
@@ -101,7 +104,7 @@ def main(par, input_file):
         best_val_loss = 1e10
 
         # Create saver for saving variables; max_to_keep -> ten best checkpoints
-        saver = tf.train.Saver(max_to_keep=par['epochs'])
+        saver = tf.train.Saver(max_to_keep=par['epochs_max'])
 
         # Initialize the variables
         init = tf.global_variables_initializer()
@@ -222,10 +225,13 @@ def main(par, input_file):
                     plt.savefig(ckpt_dir + 'epoch_' + str(ep) + '.png')
             else:
                 ep_since_last_val_improv = ep_since_last_val_improv + 1
+                if ep_since_last_val_improv >= par['stop_after_ep']:
+                    print('Stopping after ' + str(ep_since_last_val_improv) + ' epochs without improvement')
+                    break
 
             train_random_idxs = np.random.permutation(train_random_idxs)
             val_random_idxs = np.random.permutation(val_random_idxs)
-            print('{:05.0f} {:05.0f} \t{:.9f}*1e3'.format(ep, ep_since_last_val_improv, total_val_loss * 1e3))
+            print('{:05.0f} {:05.0f} \t{:.9f}*1e-3'.format(ep, ep_since_last_val_improv, total_val_loss * 1e3))
 
         elapsed_time = time.time() - start_time
         print('Elapsed: {:.0f}s'.format(elapsed_time))
@@ -240,10 +246,10 @@ def main(par, input_file):
         print('CLOSED SESS')
 
         fig, ax = plt.subplots()
-        ax.plot(range(par['epochs']), train_losses, 'r-', label='training')
-        ax.plot(range(par['epochs']), val_losses, 'b-', label='validation')
+        ax.plot(range(ep), train_losses[0:ep], 'r-', label='training')
+        ax.plot(range(ep), val_losses[0:ep], 'b-', label='validation')
         if par['live_testing']:
-            ax.plot(range(par['epochs']), test_losses, 'g-', label='testing')
+            ax.plot(range(ep), test_losses[0:ep], 'g-', label='testing')
         ax.legend()
         ax.set(xlabel='#epoch', ylabel='loss', title='training vs validation vs testing loss')
         ax.grid()
@@ -261,13 +267,15 @@ if __name__ == "__main__":
     default_par = {'live_testing': False,
                    'noise': 5,
                    'random_noise': True,
-                   'epochs': 20000,
+                   'epochs_max': 20000,
+                   'stop_after_ep': 200,
                    'batch_size': 4096,
                    'learning_rate': 1e-3,
                    'keep_rate': 1.,
                    'loss': 'mae',
                    'NL1': 1024,
                    'NL2': 2048,
+                   'seed': 0,
                    'P': 238,
                    'Q': '', 'nT1': '', 'nT2': '', 'nTI': '', 'nTE': '',
                    }
