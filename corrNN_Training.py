@@ -120,7 +120,7 @@ def main(par, input_file):
             tf.summary.scalar('test_loss', loss_op)
             test_loss_writer = tf.summary.FileWriter(ckpt_dir + 'test_loss_summary', sess.graph)
 
-        for ep in range(par['epochs']):
+        for ep in range(par['epochs_max']):
 
             # Training
             total_train_loss = 0
