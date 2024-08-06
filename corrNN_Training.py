@@ -57,7 +57,7 @@ def main(par, input_file):
     test_random_idxs = np.random.permutation(test_random_idxs)
 
     label = timestamp + '_corrNN_P=' + str(par['P']) + '_Q=' + str(par['Q']) + '_' + par['loss'] + '_ep' + str(par['epochs_max']) + \
-            '_LR' + str(par['learning_rate']) + '_KR' + str(par['keep_rate']) + '_nl' + str(par['NL1']) + ',' + str(par['NL2']) + \
+            '_LR' + str(par['learning_rate']) + '_KR' + str(par['keep_rate']) + '_nl' + str(par['nL1']) + ',' + str(par['nL2']) + \
             '_' + par['hidden_act_fun'] + '_Noise' + str(par['noise']) + '_seed' + str(par['seed'])
 
     ckpt_dir = 'checkpoints/' + label + '/'
@@ -89,7 +89,7 @@ def main(par, input_file):
         keep_pl = tf.placeholder(tf.float32)
 
         # Operations
-        pred_op = Funcs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['NL1'], par['NL2'], par['hidden_act_fun'])
+        pred_op = Funcs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['nL1'], par['nL2'], par['hidden_act_fun'])
 
         if par['loss'] == 'mse':
             loss_op = Funcs.mse_loss(pl_ref, pred_op)
@@ -273,8 +273,8 @@ if __name__ == "__main__":
                    'learning_rate': 1e-3,
                    'keep_rate': 1.,
                    'loss': 'mae',
-                   'NL1': 1024,
-                   'NL2': 2048,
+                   'nL1': 1024,
+                   'nL2': 2048,
                    'hidden_act_fun': 'relu',
                    'seed': 0,
                    'P': 238,

@@ -3,11 +3,12 @@ import numpy as np
 import os
 import scipy.io
 import corrNN_functions as TrainFuncs
+import matplotlib.pyplot as plt
 
 
 def main(par, ckpt_dir, test_file):
     # load, normalize and reshape test data
-    test_dataset = scipy.io.loadmat(test_file)
+    test_dataset = scipy.io.loadmat(ckpt_dir + test_file)
     test_dataset = TrainFuncs.normalize_data(test_dataset)
     signal_noisy = test_dataset['input_noisy']
     np.transpose(signal_noisy)
@@ -22,7 +23,7 @@ def main(par, ckpt_dir, test_file):
         keep_pl = tf.placeholder(tf.float32)
 
         # Operations
-        pred_op = TrainFuncs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['NL1'], par['NL2'], par['hidden_act_fun'])
+        pred_op = TrainFuncs.correlation_nn(pl_sig_noisy, mode_pl, keep_pl, par['P'], par['Q'], par['nL1'], par['nL2'], par['hidden_act_fun'])
 
         # Create saver for saving variables
         saver = tf.train.Saver()
@@ -53,22 +54,118 @@ def main(par, ckpt_dir, test_file):
 
         sess.close()
 
+    mae = np.nan
+    rmse = np.nan
+    if "ref" in test_dataset:
+        # synthetic with ground truth
+        print('tested on synthetic data w/ ground truth')
+        ref = test_dataset['ref']
+
+        mae = np.mean(np.abs(ref-pred))
+        print('MAE:  ' + str(mae))
+        mse = np.mean(np.square(ref-pred))
+        print('MSE:  ' + str(mse))
+        rmse = np.sqrt(np.mean(np.square(ref-pred)))
+        print('RMSE: ' + str(rmse))
+
+        plt.figure()
+        plt.imshow(np.reshape(np.mean(np.abs(ref - pred), axis=0), [60, 60]))
+        plt.colorbar()
+        plt.title('MAE over T1-T2-space')
+        plt.savefig(ckpt_dir + 'test_synth_mae_t1t2.png')
+
+        plt.figure()
+        plt.imshow(np.reshape(np.sqrt(np.mean(np.square(ref - pred), axis=0)), [60, 60]))
+        plt.colorbar()
+        plt.title('RMSE over T1-T2-space')
+        plt.savefig(ckpt_dir + 'test_synth_rmse_t1t2.png')
+
+        if "no_comp" in test_dataset:
+            no_comp = test_dataset['no_comp']
+
+            ncomp_n = []
+            ncomp_mae_means = []
+            ncomp_mae_stds = []
+            ncomp_rmse_means = []
+            ncomp_rmse_stds = []
+            mae_allN = np.mean(np.abs(ref - pred), axis=1)
+            rmse_allN = np.sqrt(np.mean(np.square(ref - pred), axis=1))
+            for ncomp in np.unique(no_comp):
+                ncomp_n.append(ncomp)
+                boolean_subset = np.squeeze(no_comp == ncomp)
+                ncomp_mae_means.append(np.mean(mae_allN[boolean_subset]))
+                ncomp_mae_stds.append(np.std(mae_allN[boolean_subset]))
+                ncomp_rmse_means.append(np.mean(rmse_allN[boolean_subset]))
+                ncomp_rmse_stds.append(np.std(rmse_allN[boolean_subset]))
+
+            # bar plot for error dependency on no_comp
+            fig, ax = plt.subplots()
+            width = 0.35  # the width of the bars
+            ind = np.arange(len(ncomp_mae_means)) + 1  # the x locations for the groups
+            rects1 = ax.bar(ind, ncomp_mae_means, width, yerr=ncomp_mae_stds, label='Test')
+            # rects2 = ax.bar(ind - width, ncomp_mae_means, width, yerr=ncomp_mae_stds, label='Val')
+            # rects2 = ax.bar(ind + width, ncomp_mae_means, width, yerr=ncomp_mae_stds, label='Train')
+            ax.set_ylabel('MAE (a.u.)')
+            ax.set_title('MAE for different number of components')
+            ax.set_xticks(ind)
+            ax.set_xlabel('# components')
+            # ax.legend()
+            plt.savefig(ckpt_dir + 'test_synth_mae_comps.png')
+
+            fig, ax = plt.subplots()
+            width = 0.35  # the width of the bars
+            ind = np.arange(len(ncomp_rmse_means)) + 1  # the x locations for the groups
+            rects1 = ax.bar(ind, ncomp_rmse_means, width, yerr=ncomp_rmse_stds, label='Test')
+            # rects2 = ax.bar(ind - width, ncomp_rmse_means, width, yerr=ncomp_rmse_stds, label='Val')
+            # rects2 = ax.bar(ind + width, ncomp_rmse_means, width, yerr=ncomp_rmse_stds, label='Train')
+            ax.set_ylabel('RMSE (a.u.)')
+            ax.set_title('RMSE for different number of components')
+            ax.set_xticks(ind)
+            ax.set_xlabel('# components')
+            # ax.legend()
+        plt.savefig(ckpt_dir + 'test_synth_rmse_comps.png')
+
+    else:
+        # in vivo
+        print('tested on in vivo data')
+        pred_mean = np.mean(pred, axis=0).reshape(1, -1)
+        pred_mean_arr = pred_mean[0, :].reshape([par['nT2'], par['nT1']], order='F')
+
+        plt.figure()
+        plt.imshow(pred_mean_arr)
+        plt.title('average pred')
+        plt.xlabel('T1 index (a.u.)')
+        plt.ylabel('T2 index (a.u.)')
+        plt.savefig(ckpt_dir + 'test_invivo_av_spectra.png')
+
+        fig, ax = plt.subplots()
+        t1mat, t2mat = np.meshgrid(np.linspace(50, 3000, 60), np.linspace(5, 300, 60))
+        ax.contourf(t1mat, t2mat, pred_mean_arr)
+        plt.title('average pred')
+        plt.xlabel('T1 (ms)')
+        plt.ylabel('T2 (ms)')
+        ax.set_box_aspect(1)
+        plt.savefig(ckpt_dir + 'test_invivo_av_spectra_contourf.png')
+
+    return mae, rmse
+
 
 if __name__ == "__main__":
     default_par = {'P': 238,
                    'Q': '',
-                   'NT1': 60,
-                   'NT2': 60,
+                   'nT1': 60,
+                   'nT2': 60,
                    'N': '',
-                   'NL1': 1024,
-                   'NL2': 2048,
+                   'nL1': 1024,
+                   'nL2': 2048,
                    'hidden_act_fun': 'relu'
                    }
-    default_par['Q'] = default_par['NT1']*default_par['NT2']
+    default_par['Q'] = default_par['nT1']*default_par['nT2']
     default_ckpt_dir = 'checkpoints/timestamp_corrNN_P=' + str(default_par['P']) + '_Q=' + str(default_par['Q']) + \
-                       '_mae_ep20000_LR0.001_KR1.0_nl' + str(default_par['NL1']) + ',' + str(default_par['NL2']) + '_' + \
+                       '_mae_ep20000_LR0.001_KR1.0_nl' + str(default_par['nL1']) + ',' + str(default_par['nL2']) + '_' + \
                        default_par['hidden_act_fun'] + '_Noise5_seed0/'
-    default_ckpt_dir = 'checkpoints/202408011707_corrNN_P=238_Q=3600_mae_ep1_LR0.001_KR1.0_nl1024,2048_Noise5/'
-    default_test_file = 'test_data_P' + str(default_par['P']) + '.mat'  # change to use in vivo data
+    default_ckpt_dir = 'checkpoints/202408061125_corrNN_P=238_Q=3600_mae_ep2_LR0.001_KR1.0_nl1024,2048_relu_Noise5_seed0/'
+    default_test_file = 'dataset_test.mat'  # change to use in vivo data
+    default_test_file = 'data_invivo.mat'
     main(default_par, default_ckpt_dir, default_test_file)
 
